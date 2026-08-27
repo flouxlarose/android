@@ -29,9 +29,13 @@ class MainActivity3 : AppCompatActivity() {
         val fis = openFileInput("fichier.txt")
         val isr = InputStreamReader(fis)
         val br = BufferedReader(isr)
+
+        val a = ArrayList<String>()
         // fonction de haut niveau, un seul param qui est une lambda donc pas besoin de ()
         br.use{
-            
+            // a = br.readLines() as ArrayList<String>
+            br.forEachLine { ligne -> a.add(ligne) }    // ligne represente un objet temporaire
         }
+        return a
     }
 }
