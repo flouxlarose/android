@@ -34,8 +34,9 @@ class MainActivity2 : AppCompatActivity() {
             var texte = champMemo.text.toString()
 
             val fos = openFileOutput("fichier.txt", MODE_APPEND) //pour qu'il écrive à la fin du fichier
-            val osw = OutputStreamWriter(fos)
+            val osw = OutputStreamWriter(fos)   // flux de traduction
             val bw = BufferedWriter(osw)
+            // exécuter un bloc de code et ça ferme les ressources
 
             bw.use{
                 bw.write(texte)
