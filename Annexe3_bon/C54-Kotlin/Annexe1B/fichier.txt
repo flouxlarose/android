@@ -1,0 +1,10 @@
+En Kotlin, les flux permettent de transmettre des données entre différentes parties d’un programme.
+Les Flow sont particulièrement utiles pour représenter des données qui arrivent progressivement dans le temps.
+Un Flow peut émettre plusieurs valeurs au cours de son exécution.
+La collecte des valeurs se fait généralement avec la fonction collect.
+Comme les Flow reposent sur les coroutines, les opérations peuvent être exécutées de manière asynchrone.
+L’opérateur map permet de transformer les valeurs émises par un flux.
+L’opérateur filter permet de conserver uniquement les valeurs qui respectent une condition donnée.
+Un StateFlow représente quant à lui un état observable qui possède toujours une valeur courante.
+Un SharedFlow peut être utilisé pour diffuser des événements à plusieurs observateurs.
+Ces différents mécanismes facilitent la communication réactive entre les composants d’une application Kotlin.
