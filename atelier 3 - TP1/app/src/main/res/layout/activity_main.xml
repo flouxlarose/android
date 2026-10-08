@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="50" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/conteneurAfficheur"
+        android:name="com.example.appatelier3stationmeteo.AfficheurFragment"
+        android:layout_width="match_parent"
+        android:layout_height="100dp" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/conteneurAlarme"
+        android:name="com.example.appatelier3stationmeteo.AlarmeFragment"
+        android:layout_width="match_parent"
+        android:layout_height="100dp" />
+
+</LinearLayout>
