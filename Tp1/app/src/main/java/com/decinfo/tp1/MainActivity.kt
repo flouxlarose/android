@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-class MainActivity : AppCompatActivity() {
+class  MainActivity : AppCompatActivity() {
     lateinit var categorie1: Button
     lateinit var categorie2: Button
     lateinit var categorie3: Button
