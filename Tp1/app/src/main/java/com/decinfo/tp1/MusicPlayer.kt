@@ -37,10 +37,10 @@ class MusicPlayer : AppCompatActivity(){
     var timer : Timer? = null
     var dureeDepart: Long = 0L
     var premierLancement = true
-
-
-
     var player : ExoPlayer? = null
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
