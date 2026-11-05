@@ -40,15 +40,18 @@ class  MainActivity : AppCompatActivity() {
         override fun onClick(v: View?) {
             if(v == categorie1) {
                 val i = Intent(this@MainActivity, liste_musique::class.java)
+                i.putExtra("lienMusique", "https://itunes.apple.com/lookup?id=6806780462&entity=song&country=fr")
                 startActivity(i)
             }
-//            else if( v == categorie2){
-//                val i = Intent(this@MainActivity, liste_musique::class.java)
-//                startActivity(i)
-//            }else if( v == categorie3){
-//                val i = Intent(this@MainActivity, liste_musique::class.java)
-//                startActivity(i)
-//            }
+            else if( v == categorie2){
+                val i = Intent(this@MainActivity, liste_musique::class.java)
+                i.putExtra("lienMusique", "https://itunes.apple.com/lookup?id=1730081008&entity=song&country=fr")
+                startActivity(i)
+            }else if( v == categorie3){
+                val i = Intent(this@MainActivity, liste_musique::class.java)
+                i.putExtra("lienMusique", "https://itunes.apple.com/lookup?id=1728900529&entity=song&country=fr")
+                startActivity(i)
+            }
             else{
                 finish()
             }

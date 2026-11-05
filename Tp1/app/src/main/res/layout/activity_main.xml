@@ -14,19 +14,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginVertical="40dp"
-        android:text="categorie1" />
+        android:text="SHELF" />
 
     <Button
         android:id="@+id/categorie2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginVertical="40dp"
-        android:text="categorie2" />
+        android:text="GARCON + AMI" />
 
     <Button
         android:id="@+id/categorie3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginVertical="40dp"
-        android:text="categorie3" />
+        android:text="EXIT" />
 </LinearLayout>

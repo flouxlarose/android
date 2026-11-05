@@ -1,16 +1,14 @@
 package com.decinfo.tp1
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ListView
-import android.widget.SimpleAdapter
-import android.widget.Toast
-import android.widget.Toast.LENGTH_LONG
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-class liste_musique : AppCompatActivity() {
+class liste_musique : AppCompatActivity(), Observateur {
     lateinit var liste: ListView
 
     val v = ArrayList<HashMap<String, Any>>()
@@ -27,22 +25,23 @@ class liste_musique : AppCompatActivity() {
 
         liste = findViewById(R.id.liste)
 
-        val adapteur = AdapterCustom(this, remplirArrayList(), R.layout.item,
-            arrayOf("position", "nom", "date", "image"), intArrayOf(R.id.position, R.id.nom, R.id.date, R.id.image))
-        liste.adapter = adapteur
 
-        // toast pour tester si fonctionne
-        liste.setOnItemClickListener { _, _, position, _ -> Toast.makeText(this, v[position]["nom"].toString(), LENGTH_LONG).show() }
+        Modele.chercherListeChansons(this, this, intent.getStringExtra("lienMusique").toString())
     }
 
-    fun remplirArrayList(): ArrayList<HashMap<String, Any>>{
-        var h = HashMap<String, Any>()
-        h["position"] = 8
-        h["nom"] = "Touch Me"
-        h["date"] = "22/03/86"
-        h["image"] = "https://www.cvm.qc.ca/wp-content/uploads/mycelium_EVENEMENT.jpg"
-        v.add(h)
+    override fun remplirListe(){
+        val adapteur = AdapterCustom(
+            this,
+            Modele.array,
+            R.layout.item,
+            arrayOf("nomChanson", "album", "artiste", "image"),
+            intArrayOf(R.id.nomChanson, R.id.album, R.id.artiste, R.id.image))
+        liste.adapter = adapteur
 
-        return v;
+        liste.setOnItemClickListener { _, _, position, _ ->
+            val i = Intent(this@liste_musique, MusicPlayer::class.java)
+            i.putExtra("position", position)
+            startActivity(i)
+        }
     }
 }

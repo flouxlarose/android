@@ -11,9 +11,9 @@ object Modele {
     var ListeChanson: ListeChanson = ListeChanson()
     val array = ArrayList<HashMap<String, Any>>()
 
-    fun chercherListeChansons(c: Context, id: Int, ob: Observateur){
+    fun chercherListeChansons(c: Context, ob: Observateur, url: String){
         val queue = Volley.newRequestQueue(c)
-        val url = "https://itunes.apple.com/lookup?id=6806780462&entity=song&country=fr"
+        val url = url
 
         val stringRequest = StringRequest(
             Request.Method.GET,
@@ -24,19 +24,22 @@ object Modele {
         queue.add(stringRequest)
     }
     fun decomposeResponse(response:String, ob: Observateur) {
+        // Klaxon remplit l'objet ListeChanson à partir du JSON
         ListeChanson = Klaxon().parse<ListeChanson>(response) ?: ListeChanson()
+        array.clear()
 
-        for (i in ListeChanson.chansons) {
+
+        for (i in ListeChanson.results.drop(1)) {   // ignore le premier entrant (pcq c'est un album et non une chanson)
             val temp = HashMap<String, Any>()
-            temp.put("trackName", i.nom)
-            temp.put("artistName", i.artiste)
-            temp.put("collectionName", i.album)
-            temp.put("artworkUrl100", i.artworkURL100)
-            temp.put("previewUrl", i.previewURL)
+            temp.put("nomChanson", i.trackName)
+            temp.put("artiste", i.artistName)
+            temp.put("album", i.collectionName)
+            temp.put("image", i.artworkUrl100)
+            temp.put("previewUrl", i.previewUrl)
 
             array.add(temp)
         }
-        ob.listePrete()
+        ob.remplirListe()
     }
 
 }

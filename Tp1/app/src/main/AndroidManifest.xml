@@ -17,9 +17,6 @@
             android:name=".MusicPlayer"
             android:exported="false" />
         <activity
-            android:name=".musicPlayer"
-            android:exported="false" />
-        <activity
             android:name=".liste_musique"
             android:exported="false" />
         <activity
