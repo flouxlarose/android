@@ -36,6 +36,7 @@ class MusicPlayer : AppCompatActivity(){
 
     var timer : Timer? = null
     var dureeDepart: Long = 0L
+    var premierLancement = true
 
 
 
@@ -51,7 +52,7 @@ class MusicPlayer : AppCompatActivity(){
         }
 
 
-
+        // find view
         playStop = findViewById(R.id.playStop)
         skip = findViewById(R.id.skip)
         back = findViewById(R.id.back)
@@ -59,7 +60,12 @@ class MusicPlayer : AppCompatActivity(){
         plus = findViewById(R.id.plus)
         time = findViewById(R.id.time)
         seekBar = findViewById(R.id.seekBar)
+        image = findViewById(R.id.imageView)
+        songName = findViewById(R.id.songName)
+        albumName = findViewById(R.id.albumName)
+        artistName = findViewById(R.id.artistName)
 
+        // ecouteur
         ec = Ecouteur()
         playStop.setOnClickListener(ec)
         skip.setOnClickListener(ec)
@@ -67,46 +73,55 @@ class MusicPlayer : AppCompatActivity(){
         minus.setOnClickListener(ec)
         plus.setOnClickListener(ec)
 
-
-
-        image = findViewById(R.id.imageView)
-        Glide.with(this).load(Modele.array.get(position).get("image").toString()).into(image)
-
-        songName = findViewById(R.id.songName)
-        songName.text = Modele.array.get(position).get("nomChanson").toString()
-
-        albumName = findViewById(R.id.albumName)
-        albumName.text = Modele.array.get(position).get("album").toString()
-
-        artistName = findViewById(R.id.artistName)
-        artistName.text = Modele.array.get(position).get("artiste").toString()
-
-        player = ExoPlayer.Builder(this).build()
+        // position
         position = intent.getIntExtra("position", -1)
-        mediaItem = MediaItem.fromUri(Modele.array.get(position).get("previewUrl").toString())
-
-        if(position == -1){ // vient de la serialistation
-            try {
-                openFileInput("sauv.ser").use{fis ->
-                    ObjectInputStream(fis).use{ois ->
-                        val etat = ois.readObject() as? EtatLecture
-                        if (etat != null) {
-                            position = etat.position
-                            dureeDepart = etat.dureeMS
-
-                        }
-                    }
-                }
-            }catch (e: Exception){
-                position = 0
-                dureeDepart = 0L
-            }
-        }
+        // si savedInstanceState != null alors ce n'est pas le premier lancement
+        premierLancement = (savedInstanceState == null) && (position != -1)
     }
 
     override fun onStart() {
         super.onStart()
-        player?.addMediaItem(mediaItem)
+
+        // lire la sauvegarde
+        if (!premierLancement || position == -1) {
+            try {
+                openFileInput("sauv.ser").use { fis ->
+                    ObjectInputStream(fis).use { ois ->
+                        val etat = ois.readObject() as? EtatLecture
+                        if (etat != null) {
+                            position = etat.position
+                            dureeDepart = etat.dureeMS
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                position = 0
+                dureeDepart = 0L
+            }
+        } else {
+            // est le premier lancement donc remet a 0
+            dureeDepart = 0L
+            premierLancement = false
+        }
+
+        if(position < 0 || position >= Modele.array.size){
+            // s'assure de la validité de position
+            position = 0
+        }
+
+        // maj interface
+        songName.text = Modele.array[position]["nomChanson"].toString()
+        albumName.text = Modele.array[position]["album"].toString()
+        artistName.text = Modele.array[position]["artiste"].toString()
+        Glide.with(this).load(Modele.array[position]["image"].toString()).into(image)
+
+        // init exoplayer
+        if (player == null){
+            player = ExoPlayer.Builder(this).build()
+        }
+
+        mediaItem = MediaItem.fromUri(Modele.array[position]["previewUrl"].toString())
+        player?.setMediaItem(mediaItem)
         player?.prepare()
 
         if(dureeDepart > 0L){
@@ -114,7 +129,8 @@ class MusicPlayer : AppCompatActivity(){
             seekBar.progress = dureeDepart.toInt()
         }
         player?.play()
-
+        onPlay = true
+        playStop.text = "Stop"
         seekBar.max = 30000
 
         val tempsRestant = (30000 - dureeDepart).coerceAtLeast(1000L)
@@ -126,19 +142,22 @@ class MusicPlayer : AppCompatActivity(){
     {
         override fun onClick(v: View?) {
             if (v == playStop){
-                if (onPlay){    // met sur pause
-                    player?.pause()
+                val p = player ?: return    // si null quitte
+
+                if (onPlay) { // pause
+                    p.pause()
                     onPlay = false
                     playStop.text = "Play"
-
                     timer?.cancel()
-                }
-                else{   // mets sur play
-                    player?.play()
+                } else { // play
+                    p.play()
                     onPlay = true
                     playStop.text = "Stop"
 
-                    timer = Timer(player?.duration!!)
+                    // temps restant
+                    val tempsRestant = (30000 - p.currentPosition).coerceAtLeast(1000L)
+                    timer?.cancel()
+                    timer = Timer(tempsRestant)
                     timer?.start()
                 }
             }
@@ -148,30 +167,7 @@ class MusicPlayer : AppCompatActivity(){
                 }else{
                     position++
                 }
-
-                if(!onPlay){
-                    onPlay = true
-                    playStop.text = "Stop"
-                }
-
-                player?.stop()
-                player?.clearMediaItems()
-                mediaItem = MediaItem.fromUri(Modele.array.get(position).get("previewUrl").toString())
-                player?.addMediaItem(mediaItem)
-                player?.prepare()
-                player?.play()
-
-                Glide.with(this@MusicPlayer).load(Modele.array.get(position).get("image").toString()).into(image)
-                onPlay = true
-
-                timer?.cancel()
-                seekBar.progress = 0
-                timer = Timer(30000)
-                timer?.start()
-
-                songName.text = Modele.array.get(position).get("nomChanson").toString()
-                albumName.text = Modele.array.get(position).get("album").toString()
-                artistName.text = Modele.array.get(position).get("artiste").toString()
+                chargerEtJouerChanson()
             }
             if(v == back){
                 if(position == 0){
@@ -179,39 +175,25 @@ class MusicPlayer : AppCompatActivity(){
                 }else{
                     position--
                 }
-
-                if(!onPlay){
-                    onPlay = true
-                    playStop.text = "Stop"
-                }
-
-                player?.stop()
-                player?.clearMediaItems()
-                mediaItem = MediaItem.fromUri(Modele.array.get(position).get("previewUrl").toString())
-                player?.addMediaItem(mediaItem)
-                player?.prepare()
-                player?.play()
-
-                Glide.with(this@MusicPlayer).load(Modele.array.get(position).get("image").toString()).into(image)
-                onPlay = true
-
-                seekBar.progress = 0
-                timer = Timer(30000)
-                timer?.start()
-
-                songName.text = Modele.array.get(position).get("nomChanson").toString()
-                albumName.text = Modele.array.get(position).get("album").toString()
-                artistName.text = Modele.array.get(position).get("artiste").toString()
+                chargerEtJouerChanson()
             }
             if(v == minus){
-                player!!.seekTo(player!!.currentPosition - 5000)
-                seekBar.progress = player!!.currentPosition.toInt()
-                time.text = (player!!.currentPosition/1000).toString()
+                val p = player
+                if (p != null){
+                    val nouvellePos = (p.currentPosition - 5000).coerceAtLeast(0L)  //peux pas aller en dessous de 0
+                    p.seekTo(nouvellePos)
+                    seekBar.progress = nouvellePos.toInt()
+                    time.text = (30 - (nouvellePos / 1000)).toString()
+                }
             }
             if(v == plus){
-                player!!.seekTo(player!!.currentPosition + 5000)
-                seekBar.progress = player!!.currentPosition.toInt()
-                time.text = (player!!.currentPosition/1000).toString()
+                val p = player
+                if (p != null){
+                    val nouvellePos = (p.currentPosition + 5000).coerceAtMost(30000L)  //peux pas aller au dessus de 30 sec
+                    p.seekTo(nouvellePos)
+                    seekBar.progress = nouvellePos.toInt()
+                    time.text = (30 - (nouvellePos / 1000)).toString()
+                }
             }
         }
     }
@@ -243,24 +225,21 @@ class MusicPlayer : AppCompatActivity(){
     }
 
     override fun onDestroy() {
-        // nettoyer le l'exo player
         super.onDestroy()
-        player?.stop()
-        player?.clearMediaItems()
-        timer?.cancel()
-        player?.release()
-        player = null
-        timer = null
     }
     inner class Timer(temps: Long): CountDownTimer(temps, 25){
         override fun onTick(mili: Long) {
-            seekBar.progress = (player!!.currentPosition).toInt()
-            time.text = (30 - player!!.currentPosition/1000).toString()
+            val p = player ?: return // empeche de planter si player a été détruit
+            val pos = p.currentPosition
+            seekBar.progress = pos.toInt()
+            time.text = (30 - (pos / 1000)).toString()
         }
         override fun onFinish() {
+            if(player == null) return
+
             seekBar.progress = 30000
             time.text = "0"
-            if(position == Modele.array.size - 1){
+            if(position >= Modele.array.size - 1){
                 position = 0
             }else{
                 position++
@@ -270,24 +249,33 @@ class MusicPlayer : AppCompatActivity(){
                 playStop.text = "Stop"
             }
 
+            chargerEtJouerChanson()
+        }
+    }
+    private fun chargerEtJouerChanson(){
+        val p = player ?: return    // quitte si player est null
+
+        if (!onPlay){
+            onPlay = true
+            playStop.text = "Stop"
+        }
+
             player?.stop()
-            player?.clearMediaItems()
             mediaItem = MediaItem.fromUri(Modele.array.get(position).get("previewUrl").toString())
-            player?.addMediaItem(mediaItem)
+            player?.setMediaItem(mediaItem)
             player?.prepare()
             player?.play()
 
             Glide.with(this@MusicPlayer).load(Modele.array.get(position).get("image").toString()).into(image)
-            onPlay = true
-
-            seekBar.progress = 0
-            timer = Timer(30000)
-            timer?.start()
-
             songName.text = Modele.array.get(position).get("nomChanson").toString()
             albumName.text = Modele.array.get(position).get("album").toString()
             artistName.text = Modele.array.get(position).get("artiste").toString()
-        }
+
+            timer?.cancel()
+            seekBar.progress = 0
+            timer = Timer(30000)
+            timer?.start()
+            dureeDepart = 0L
     }
 
 }
