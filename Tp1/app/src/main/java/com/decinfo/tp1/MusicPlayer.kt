@@ -14,6 +14,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.bumptech.glide.Glide
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 
 class MusicPlayer : AppCompatActivity(){
     lateinit var mediaItem: MediaItem
@@ -33,6 +35,7 @@ class MusicPlayer : AppCompatActivity(){
     var ec : Ecouteur? = null
 
     var timer : Timer? = null
+    var dureeDepart: Long = 0L
 
 
 
@@ -46,6 +49,8 @@ class MusicPlayer : AppCompatActivity(){
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+
 
         playStop = findViewById(R.id.playStop)
         skip = findViewById(R.id.skip)
@@ -77,20 +82,43 @@ class MusicPlayer : AppCompatActivity(){
         artistName.text = Modele.array.get(position).get("artiste").toString()
 
         player = ExoPlayer.Builder(this).build()
-        position = intent.getIntExtra("position", 0)
+        position = intent.getIntExtra("position", -1)
         mediaItem = MediaItem.fromUri(Modele.array.get(position).get("previewUrl").toString())
+
+        if(position == -1){ // vient de la serialistation
+            try {
+                openFileInput("sauv.ser").use{fis ->
+                    ObjectInputStream(fis).use{ois ->
+                        val etat = ois.readObject() as? EtatLecture
+                        if (etat != null) {
+                            position = etat.position
+                            dureeDepart = etat.dureeMS
+
+                        }
+                    }
+                }
+            }catch (e: Exception){
+                position = 0
+                dureeDepart = 0L
+            }
+        }
     }
 
     override fun onStart() {
         super.onStart()
         player?.addMediaItem(mediaItem)
         player?.prepare()
+
+        if(dureeDepart > 0L){
+            player?.seekTo(dureeDepart)
+            seekBar.progress = dureeDepart.toInt()
+        }
         player?.play()
 
         seekBar.max = 30000
-        seekBar.progress = 0
 
-        timer = Timer(30000)
+        val tempsRestant = (30000 - dureeDepart).coerceAtLeast(1000L)
+        timer = Timer(tempsRestant)
         timer?.start()
     }
 
@@ -189,8 +217,22 @@ class MusicPlayer : AppCompatActivity(){
     }
 
     override fun onStop() {
-        // serialistation a faire
+        // serialistation
 
+        try {
+            val duree = player?.currentPosition?: 0L
+            val etat = EtatLecture(position, duree)
+
+            openFileOutput("sauv.ser", MODE_PRIVATE).use { fos ->
+                ObjectOutputStream(fos).use { oos ->
+                    oos.writeObject(etat)
+                }
+            }
+        } catch (e: Exception){
+            e.printStackTrace()
+        }
+
+        // nettoyer le l'exo player
         super.onStop()
         player?.stop()
         player?.clearMediaItems()
@@ -201,6 +243,7 @@ class MusicPlayer : AppCompatActivity(){
     }
 
     override fun onDestroy() {
+        // nettoyer le l'exo player
         super.onDestroy()
         player?.stop()
         player?.clearMediaItems()
